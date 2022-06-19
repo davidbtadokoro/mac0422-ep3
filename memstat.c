@@ -31,10 +31,10 @@ double getmedian(unsigned int * holes_lengths, int nr_holes)
   if (nr_holes % 2 == 0) {
     i = nr_holes/2 - 1;
     j = nr_holes/2;
-    median = (holes_lengths[i] + holes_lengths[j])/(double) nr_holes;
+    median = (holes_lengths[i] + holes_lengths[j])/2.0;
   }
   else
-    median = holes_lengths[nr_holes/2];
+    median = (double) holes_lengths[nr_holes/2];
 
   return median;
 }
@@ -83,8 +83,7 @@ int main(int argc, char ** argv)
     for (i = 0, j = 0; i < _NR_HOLES; i++) {
       if(pmi.pmi_holes[i].h_base && pmi.pmi_holes[i].h_len) {
         holes_lengths[j] = (pmi.pmi_holes[i].h_len << CLICK_SHIFT);
-      	dev_sum += pow(((double) holes_lengths[j] - length_avg),
-                       (double) 2);
+      	dev_sum += pow(((double) holes_lengths[j] - length_avg), 2.0);
         j++;
       }
     }
