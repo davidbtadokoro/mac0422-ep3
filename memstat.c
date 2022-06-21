@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <lib.h>
 #include <unistd.h>
 #include <math.h>
-
-#define SLEEP_SECONDS 1
-/*#define MEMSTAT_DEBUG*/
 
 /* Funcao auxiliar do Bubble Sort */
 void swap(unsigned int * x, unsigned int * y)
@@ -15,23 +13,28 @@ void swap(unsigned int * x, unsigned int * y)
   *y = temp;
 }
 
-/* Funcao que extrai mediana de lista com tamanhos dos buracos */
-double getmedian(unsigned int * holes_lengths, int nr_holes)
+/* Algoritmo de ordenacao simples */
+void bubbleSort(unsigned int * holes_lengths, int nr_holes)
 {
   int i, j;
-  double median;
 
-  /* Bubble Sort */
   for (i = 0; i < nr_holes - 1; i++)
     for (j = 0; j < nr_holes - i - 1; j++)
       if (holes_lengths[j] > holes_lengths[j+1])
         swap(&holes_lengths[j], &holes_lengths[j+1]);
+}
+
+/* Funcao que extrai mediana de lista com tamanhos dos buracos */
+double getmedian(unsigned int * holes_lengths, int nr_holes)
+{
+  int med1, med2;
+  double median;
 
   /* Decidindo qual valor de mediana pegamos */
   if (nr_holes % 2 == 0) {
-    i = nr_holes/2 - 1;
-    j = nr_holes/2;
-    median = (holes_lengths[i] + holes_lengths[j])/2.0;
+    med1 = nr_holes/2 - 1;
+    med2 = nr_holes/2;
+    median = (holes_lengths[med1] + holes_lengths[med2])/2.0;
   }
   else
     median = (double) holes_lengths[nr_holes/2];
@@ -54,6 +57,32 @@ int main(int argc, char ** argv)
   unsigned int length_sum;
   double dev_sum;
   int i, j;
+  /* Booleano p/ dump de holes_length */
+  int dmp = 0;
+  /* Tempo entre medicoes em segundos */
+  int sleep_seconds = 1;
+
+  if (argc > 2) {
+    printf("Erro: numero de argumentos incorreto\n");
+    printf("Uso: %s [--dump=nord | --dump=ord]\n", argv[0]);
+    return 1;
+  }
+
+  if (argc == 2) {
+    if (strcmp(argv[1], "--dump=nord") == 0) {
+      dmp = 1;
+      sleep_seconds = 5;
+    }      
+    else if (strcmp(argv[1], "--dump=ord") == 0) {
+      dmp = 2;
+      sleep_seconds = 5;
+    }
+    else {
+      printf("Erro: argumento '%s' invalido.\n", argv[1]);
+      printf("Uso: %s [--dump=nord | --dump=ord]\n", argv[0]);
+      return 1;
+    }
+  }
 
   for (;;) {
 
@@ -87,27 +116,45 @@ int main(int argc, char ** argv)
         j++;
       }
     }
-
+    
     /* Calcula o desvio padrao */
     length_stdev = sqrt(dev_sum/(double) nr_holes);
 
-    /* Calcula a mediana */
+    /* dump de holes_lengths nao ordenado */
+    if (dmp == 1) {
+      printf("\033[0;35m");
+      printf("-----------------------------------------------------------\n");
+      printf("\033[0m");
+      printf("holes_lengths NAO ORDENADO\n");
+      for (i = 0; i < nr_holes; i++)
+        printf("%fMB\n" , holes_lengths[i]/1000000.0);
+      printf("\n");
+    }
+
+    /* Ordena lista com tamanhos dos buracos e extrai a mediana */
+    bubbleSort(holes_lengths, nr_holes);
     length_median = getmedian(holes_lengths, nr_holes);
-
-
-    #ifdef MEMSTAT_DEBUG
-    printf("\nholes_lengths\n");
-    for (i = 0; i < nr_holes; i++)
-      printf("%uB\n" , holes_lengths[i]);
-    printf("\n");
-    #endif
-   
+    
+    /* dump de holes_lengths ordenado */
+    if (dmp == 2) {
+      printf("\033[0;35m");
+      printf("-----------------------------------------------------------\n");
+      printf("\033[0m");
+      printf("holes_lengths ORDENADO\n");
+      for (i = 0; i < nr_holes; i++)
+        printf("%fMB\n" , holes_lengths[i]/1000000.0);
+      printf("\n");
+    }
+  
     /* Imprime estatisticas */
-    printf("NR_HOLES: %d\tAVERAGE: %.1fB\tSTD_DEV: %.1fB\tMEDIAN: %.0fB\n",
-            nr_holes, length_avg, length_stdev, length_median);
+    printf("HOLES: %d\tAVERAGE: %.4fMB\tSTDDEV: %.4fMB\tMEDIAN: %.4fMB\n",
+            nr_holes,
+	    length_avg/1000000.0,
+	    length_stdev/1000000.0,
+	    length_median/1000000.0);
 
-    /* Espera SLEEP_SECONDS segundos ate nova medicao */
-    sleep(SLEEP_SECONDS);
+    /* Espera sleep_seconds segundos ate nova medicao */
+    sleep(sleep_seconds);
   }
 
 
