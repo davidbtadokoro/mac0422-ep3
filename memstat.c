@@ -13,6 +13,7 @@ void swap(unsigned int * x, unsigned int * y)
   *y = temp;
 }
 
+
 /* Algoritmo de ordenacao simples */
 void bubbleSort(unsigned int * holes_lengths, int nr_holes)
 {
@@ -23,6 +24,7 @@ void bubbleSort(unsigned int * holes_lengths, int nr_holes)
       if (holes_lengths[j] > holes_lengths[j+1])
         swap(&holes_lengths[j], &holes_lengths[j+1]);
 }
+
 
 /* Funcao que extrai mediana de lista com tamanhos dos buracos */
 double getmedian(unsigned int * holes_lengths, int nr_holes)
@@ -42,6 +44,27 @@ double getmedian(unsigned int * holes_lengths, int nr_holes)
   return median;
 }
 
+
+/* Faz dump dos tamanhos dos buracos */
+void dump_holes(unsigned int * holes_lengths, int nr_holes)
+{
+  static dump_nr = 0;
+  int i;
+
+  /* Atualiza numero do dump */
+  dump_nr++;
+
+  /* Limpa tela */
+  printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+  
+  /* Imprime tamanho dos buracos */
+  printf("\t\t\t\033[0;33mHOLES_LENGTHS DUMP (NUMBER %d)\033[0m\n\n", dump_nr);
+  for (i = 0; i < nr_holes; i++)
+    printf("\t\t\t\t%.4fMB\n" , holes_lengths[i]/1048576.0);
+  printf("\n");
+}
+
+
 int main(int argc, char ** argv)
 {
   /* Valores a serem impressos */
@@ -58,28 +81,25 @@ int main(int argc, char ** argv)
   double dev_sum;
   int i, j;
   /* Booleano p/ dump de holes_length */
-  int dmp = 0;
+  int dump_mode = 0;
   /* Tempo entre medicoes em segundos */
   int sleep_seconds = 1;
 
+  /* Tratamentos de erros de input do usuario */
   if (argc > 2) {
     printf("Erro: numero de argumentos incorreto\n");
-    printf("Uso: %s [--dump=nord | --dump=ord]\n", argv[0]);
+    printf("Uso: %s [--dump-mode]\n", argv[0]);
     return 1;
   }
 
   if (argc == 2) {
-    if (strcmp(argv[1], "--dump=nord") == 0) {
-      dmp = 1;
+    if (strcmp(argv[1], "--dump-mode") == 0) {
+      dump_mode = 1;
       sleep_seconds = 5;
     }      
-    else if (strcmp(argv[1], "--dump=ord") == 0) {
-      dmp = 2;
-      sleep_seconds = 5;
-    }
     else {
       printf("Erro: argumento '%s' invalido.\n", argv[1]);
-      printf("Uso: %s [--dump=nord | --dump=ord]\n", argv[0]);
+      printf("Uso: %s [--dump-mode]\n", argv[0]);
       return 1;
     }
   }
@@ -120,38 +140,19 @@ int main(int argc, char ** argv)
     /* Calcula o desvio padrao */
     length_stdev = sqrt(dev_sum/(double) nr_holes);
 
-    /* dump de holes_lengths nao ordenado */
-    if (dmp == 1) {
-      printf("\033[0;35m");
-      printf("-----------------------------------------------------------\n");
-      printf("\033[0m");
-      printf("holes_lengths NAO ORDENADO\n");
-      for (i = 0; i < nr_holes; i++)
-        printf("%fMB\n" , holes_lengths[i]/1000000.0);
-      printf("\n");
-    }
-
     /* Ordena lista com tamanhos dos buracos e extrai a mediana */
     bubbleSort(holes_lengths, nr_holes);
     length_median = getmedian(holes_lengths, nr_holes);
     
     /* dump de holes_lengths ordenado */
-    if (dmp == 2) {
-      printf("\033[0;35m");
-      printf("-----------------------------------------------------------\n");
-      printf("\033[0m");
-      printf("holes_lengths ORDENADO\n");
-      for (i = 0; i < nr_holes; i++)
-        printf("%fMB\n" , holes_lengths[i]/1000000.0);
-      printf("\n");
-    }
+    if (dump_mode) { dump_holes(holes_lengths, nr_holes); }
   
     /* Imprime estatisticas */
     printf("HOLES: %d\tAVERAGE: %.4fMB\tSTDDEV: %.4fMB\tMEDIAN: %.4fMB\n",
             nr_holes,
-	    length_avg/1000000.0,
-	    length_stdev/1000000.0,
-	    length_median/1000000.0);
+	    length_avg/1048576.0,
+	    length_stdev/1048576.0,
+	    length_median/1048576.0);
 
     /* Espera sleep_seconds segundos ate nova medicao */
     sleep(sleep_seconds);
