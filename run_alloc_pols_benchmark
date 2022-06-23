@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# Aqui criamos uma ordem de buracos que nos ajudara
+# a simular uma situacao em que, dependendo da politica
+# de alocacao vigente, teremos um resultado diferente.
+#
+# Nosso objetivo e criar a seguinte situacao:
+# Em dado ponto da lista de buracos, temos um buraco de
+# de 24MB seguido de um buraco de 12MB seguido de um buraco
+# de tamanho maior (muito maior) que 24MB.
+#
+# O minix3.1.2a busca manter um buraco grande com tamanho
+# proximo ao total da memoria (no nosso caso, 1024MB) e
+# outros buracos com menos de 1MB. Assim, qualquer alocacao
+# (a priori) gerada pelo forkmem ira particionar o buraco
+# grande. O programa alocado pelo forkmem TERA UM ENDERECO
+# BASE MENOR QUE O RESTO DO BURACO E MAIOR QUE O ENDERECO
+# BASE DO ULTIMO PROGRAMA ALOCADO PELO FORKMEM (*). Isto e
+# importante, pois significa que a ordem que colocamos as
+# alocacoes do forkmem pelo tempo de inicio (lembrando que
+# o selection sort usado pelo forkmem e estavel) e a mesma
+# ordem de um trecho da lista ligada dos buracos quando
+# estas porcoes forem dealocadas (**).
+#
+# As porcoes de 1MB servem como "barreiras", pois, pelas
+# porcoes de 24MB e a primeira porcao de 12MB serem
+# dealocadas antes (nao fazem merge), temos este trecho
+# de buracos:
+#                24MB -> 12MB -> BURACO_GRANDE.
+# Quando a segunda porcao de 12MB e alocada, ela ira ser
+# colocada em um destes tres buracos.
+#
+# Caso a politica seja o first fit, o buraco de 24MB e
+# escolhido. Para o best_fit, o buraco de 12MB. Para o
+# worst_fit, o buraco grande. Por fim, para o random_fit,
+# qualquer um destes buracos pode ser escolhido.
+#
+# (*)  /usr/src/servers/pm/alloc.c (linhas 187-190)
+# (**) /usr/src/servers/pm/alloc.c (linhas 248-251)
+
+
+# Em 9s:  USANDO BURACO USANDO BURACO USANDO N_ALLOC
+./forkmem 1+1+20 24+1+7 1+1+20 12+1+7 1+1+20 12+12+9 &
+
+
+# Roda memstat mostrando dump dos tamanhos dos buracos
+# ordenados por tamanho. Apos o dump NUMBER 6, o teste
+# ja foi feito e o programa pode ser encerrado com um
+# CTRL+C.
+memstat --dump-mode
+
+# OBS.: Para mudar de politica de alocacao, basta digitar
+#     change_allocation_policy <politica>
