@@ -3,7 +3,17 @@
 #include <string.h>
 #include <lib.h>
 #include <unistd.h>
+#include <signal.h>
 #include <math.h>
+
+
+/* Para termino gracioso do programa com um CTRL+C */
+void sig_handler(int sig_num)
+{
+  printf("\n\n\t\t\t\033[0;32m   Encerrando memstat...\033[0m\n\n");
+  exit(0);
+}
+
 
 /* Funcao auxiliar do Bubble Sort */
 void swap(unsigned int * x, unsigned int * y)
@@ -45,6 +55,29 @@ double getmedian(unsigned int * holes_lengths, int nr_holes)
 }
 
 
+/* Esta funcao imprime mensagem de inicio de programa */
+void startup_message(void)
+{
+  /* Limpa tela */
+  printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+
+  /* Imprime mensagem de inicio do programa */
+  printf("\n\033[0;32m\t\t-----------------memstat-----------------\n");
+  printf("\t\t|                                       |\n");
+  printf("\t\t|  Este programa imprime estatisticas   |\n");
+  printf("\t\t|  referentes aos tamanhos dos buracos  |\n");
+  printf("\t\t|  da memoria a cada 1 segundo.         |\n");
+  printf("\t\t|                                       |\n");
+  printf("\t\t|  As estatisticas sao:                 |\n");
+  printf("\t\t|    - HOLES: Numero de buracos         |\n");
+  printf("\t\t|    - AVERAGE: Media dos tamanhos      |\n");
+  printf("\t\t|    - STDDEV: Desv Pad dos tamanhos    |\n");
+  printf("\t\t|    - MEDIAN: Mediana dos tamanhos     |\n");
+  printf("\t\t|                                       |\n");
+  printf("\t\t-----------------------------------------\033[0m\n\n");
+}
+
+
 /* Faz dump dos tamanhos dos buracos */
 void dump_holes(unsigned int * holes_lengths, int nr_holes)
 {
@@ -58,7 +91,7 @@ void dump_holes(unsigned int * holes_lengths, int nr_holes)
   printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   
   /* Imprime tamanho dos buracos */
-  printf("\t\t\t\033[0;33mHOLES_LENGTHS DUMP (NUMBER %d)\033[0m\n\n", dump_nr);
+  printf("\t\t\t\033[0;32mHOLES_LENGTHS DUMP (NUMBER %d)\033[0m\n\n", dump_nr);
   for (i = 0; i < nr_holes; i++)
     printf("\t\t\t\t%.4fMB\n" , holes_lengths[i]/1048576.0);
   printf("\n");
@@ -85,6 +118,9 @@ int main(int argc, char ** argv)
   /* Tempo entre medicoes em segundos */
   int sleep_seconds = 1;
 
+  /* Para termino gracioso do programa com um CTRL+C */
+  signal(SIGINT, sig_handler);
+  
   /* Tratamentos de erros de input do usuario */
   if (argc > 2) {
     printf("Erro: numero de argumentos incorreto\n");
@@ -104,6 +140,9 @@ int main(int argc, char ** argv)
     }
   }
 
+  /* Se nao for dump mode, imprime mensagem de inicio */
+  if (!dump_mode) { startup_message(); }
+  
   for (;;) {
 
     /* Copia lista de holes + free_slots em pmi */
@@ -138,7 +177,7 @@ int main(int argc, char ** argv)
     }
     
     /* Calcula o desvio padrao */
-    length_stdev = sqrt(dev_sum/(double) nr_holes);
+    length_stdev = sqrt(dev_sum/(double) (nr_holes - 1));
 
     /* Ordena lista com tamanhos dos buracos e extrai a mediana */
     bubbleSort(holes_lengths, nr_holes);
