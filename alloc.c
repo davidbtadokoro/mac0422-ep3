@@ -14,6 +14,9 @@
  *   mem_init:	initialize the tables when PM start up
  *   max_hole:	returns the largest hole currently available
  *   mem_holes_copy: for outsiders who want a copy of the hole-list
+ *###########################################################################*
+ *   setallocpol: define a politica de alocacao (0-3)
+ *###########################################################################*
  */
 
 #include "pm.h"
@@ -89,8 +92,11 @@ phys_clicks clicks;		/* amount of memory requested */
  * always on a click boundary.  This procedure is called when memory is
  * needed for FORK or EXEC.  Swap other processes out if needed.
  */
-  register struct hole *hp, *prev_ptr, *candidate, *cand_prev_ptr;
-  int nr_candidates, random_index, i;
+  /* Ponteiros de holes para percorrermos a lista */
+  register struct hole *hp, *prev_ptr;
+  /* Ponteiros de holes que apontam para o hole candidato e seu antecessor */
+  register struct hole *candidate, *cand_prev_ptr;
+  /* Variaveis para tamanho e endereco de memoria */
   phys_clicks cand_len, old_base;
 
   do {
@@ -152,26 +158,34 @@ phys_clicks clicks;		/* amount of memory requested */
 
       /* random_fit */
       case 3: {
-        nr_candidates = 0;
+        int nr_candidates = 0, rand_index = 0, i = 0;
+        double rand_number;
         /* percorremos a lista para sabermos o numero de candidatos */
         while (hp != NIL_HOLE && hp->h_base < swap_base) {
           if (hp->h_len >= clicks)
             nr_candidates++;
 
           prev_ptr = hp;
-    		  hp = hp->h_next;
+          hp = hp->h_next;
         }
 
-        srand(time(NULL));
-        random_index = (int) floor(nr_candidates * rand()/(double)RAND_MAX);
+        /* sorteamos um buraco */
+        rand_number = ((double)(rand()) / (double)(RAND_MAX)) * 
+		      (double) nr_candidates;
+	rand_index = (int) floor(rand_number);
 
+        /* redefinimos os ponteiros para percorrermos a lista */
+        prev_ptr = NIL_HOLE;
         hp = hole_head;
-        i = 0;
-        while (hp != NIL_HOLE && hp->h_base < swap_base) {
+        cand_prev_ptr = NIL_HOLE;
+        candidate = NIL_HOLE;
 
+	/* percorremos a lista mais uma vez para achar o sorteado */
+        while (hp != NIL_HOLE && hp->h_base < swap_base) {
           if (hp->h_len >= clicks) {
-            if (i == random_index) {
+            if (i == rand_index) {
               candidate = hp;
+              cand_prev_ptr = prev_ptr;
               break;
             }
             i++;
