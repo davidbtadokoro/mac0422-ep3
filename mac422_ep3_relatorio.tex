@@ -1,0 +1,94 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath, amsfonts, amssymb, xcolor}
+
+\begin{document}
+
+\begin{titlepage}
+	\begin{center}
+		\line(1,0){400} \\
+		[0.25in]
+		\huge{\bfseries Exercício Programa 3} \\
+		[0.01in]
+		\line(1,0){300} \\
+		[0.5cm]
+		\textsc{\Large MAC0422 - Sistemas Operacionais} \\
+		[1.5cm]
+		\textsc{\large Prof.: Alan Mitchell Durham}\\
+		\textsc{\large Monitor: Waldir Edison Farfán Caro}\\
+		[12cm]
+	\end{center}
+	\begin{flushright}
+		\textsc{David de Barros Tadokoro}\\
+		\textsc{NºUSP: 10300507}\\
+		\textsc{Luís Davi Oliveira de Almeida Campos}\\
+		\textsc{NºUSP: 11849460}\\
+		\textsc{Junho de 2022}
+	\end{flushright}
+\end{titlepage}
+
+\newpage
+
+\section{Introdução}
+
+Nesse terceiro EP, tivemos como objetivo principal alterar o código do MINIX de modo a implementar diferentes estratégias de alocação de processos na memória. Para isso, além de ter de alterar o código fonte do SO, criamos também funções de usuário que permitissem alterar a estratégia de alocação do sistema e obter estatísticas do estado da memória, de modo a facilitar analises e testes. A versão do MINIX utilizada foi a 3.1.2a.
+
+% TODO: Acho que aqui cabe acrescentar a parada que você falou de inicializar o minix com 3. Aí deixo pra tu incluir aí como achar melhor - se numa seção nova, numa subseção ou dentro de alguma dessas duas primeiras seções, talvez até juntando com a informação sobre a versão que a gente usou, que eu coloquei ali na introdução mesmo.
+
+\section{Arquivos}
+
+\subsection{Modificados}
+
+\begin{itemize}
+	\item include/minix/callnr.h
+	\item include/unistd.h
+	\item servers/pm/proto.h
+	\item servers/pm/table.c
+	\item servers/fs/table.c
+	\item servers/pm/misc.c
+	\item servers/pm/alloc.c
+\end{itemize}	
+
+\subsection{Criados}
+
+\begin{itemize}
+	\item lib/posix/setallocpol.c
+	% TODO: completar path dos programas de usuário no minix(?)
+	\item change\_allocation\_policy.c
+	\item memstat.c
+	\item run\_alloc\_pols\_benchmark
+\end{itemize}
+
+Esse último foi implementado para testar as políticas de alocação.
+
+\section{Implementação das Políticas de Alocação}
+
+No arquivo alloc.c, alteramos a função \texttt{alloc\_mem()}, responsável por alocar os processos na memória para que ela utilizasse a política de alocação em voga, que pode ser \texttt{first\_fit}, \texttt{best\_fit}, \texttt{worst\_fit} ou \texttt{ramdom\_fit}. A política padrão é a \texttt{first\_fit}, mas é possível alterar a política em voga por meio do programa de usuário \texttt{change\_allocation\_policy}.
+
+A implementação dos algoritmos de alocação foi simples: 
+
+\begin{itemize}
+    \item \texttt{first\_fit}: aloca o processo no primeiro buraco da memória cujo tamanho o caiba
+    \item \texttt{best\_fit}: aloca o processo no menor buraco da memória que o caiba
+    \item \texttt{worst\_fit}: aloca o processo no maior buraco da memória
+    \item \texttt{ramdom\_fit}: aloca aleatoriamente o processo em um dos buracos da memória que o caibam
+\end{itemize}
+
+
+\section{Alterando a política de alocação em voga}
+
+Como já comentado acima, para modificar a política de alocação em voga, criamos o programa de usuário \texttt{change\_allocation\_policy.c}. Esse programa recebe uma string com o nome da política desejada e o que ele faz é basicamente realizar a chamada de sistema \texttt{setallocpol()} - que criamos - que modifica a variável privada \texttt{policy} do arquivo \texttt{alloc.c}. Essa variável, por sua vez, é utilizada pela função \texttt{alloc\_mem()} para saber qual algotimo de alocação utilizar.
+
+% TODO: Não sei o quão detalhada precisa ser a explicação da chamada de sistema, se tem que falar o passo a passo da implementação, enfim. Ficou bem simples aí a explicação, falei meio por cima. Se quiser complementar ou detalhar fica a vontade.
+
+\section{Obtendo estatísticas sobre os buracos da memória}
+
+Implementadas as políticas de alocação e o programa que define a política usada pelo sistema, criado então um novo programa de usuário para coletar estatísticas sobre os buracos da memória. Esse programam, chamado \texttt{memstat.c} utiliza a chamada de sistema \texttt{getsysinfo()} - do próprio MINIX - para obter a lista de buracos (que são do tipo \texttt{struct hole}) e com isso calcula o número de buracos e a média, mediana e desvio padrão deles.
+
+\section{Testando as políticas}
+
+% TODO: Aqui tu pode explicar o arquivo de testes que tu criou, sepa colocar aquele textinho aqui ou partes dele. Aí você que sabe, vê aí como achar melhor que tu tá mais por dentro dessa parte.
+
+\end{document}
